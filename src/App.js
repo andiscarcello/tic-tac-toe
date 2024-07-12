@@ -70,34 +70,50 @@ function calculateWinner(squares) {
 export default function Game(){
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
+  const [moves, setMoves] = useState(determineMoves(history, currentMove));
+  const [sortOrder, setSortOrder] = useState(true);
   const currentSquares = history[currentMove];
-
-  function handlePlay(nextSquares){
-    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
-    setHistory(nextHistory);
-    setCurrentMove(nextHistory.length - 1);
-  }
 
   function jumpTo(nextMove) {
     setCurrentMove(nextMove);
   }
 
-  const moves = history.map((squares, move) => {
-    let description;
-    if (move > 0) {
-      description = 'Go to move #' + move;
-    } else {
-      description = 'Go to game start';
-    }
-      if (move == currentMove){
-        return (<li key={move}>You are at move #{move}</li>);
+  function determineMoves(nextHistory, nextCurrentMove){
+    return nextHistory.map((squares, move) => {
+      let description;
+      if (move > 0) {
+        description = 'Go to move #' + move;
+      } else {
+        description = 'Go to game start';
       }
-      else {
-      return (<li key={move}>
-        <button onClick={() => jumpTo(move)}>{description}</button>
-        </li>)
-      }
-  });
+        if (move == nextCurrentMove){
+          return (<li key={move}>You are at move #{move}</li>);
+        }
+        else {
+        return (<li key={move}>
+          <button onClick={() => jumpTo(move)}>{description}</button>
+          </li>)
+        }
+    });
+  }
+
+  function sortMoves(fromClick, nextMoves){
+    let newSortOrder = fromClick ? !sortOrder : sortOrder;
+    setSortOrder(newSortOrder);
+
+    let sortedMoves = newSortOrder ? nextMoves.sort((a, b) => a.key - b.key) : nextMoves.sort((a, b) => b.key - a.key);
+    setMoves(sortedMoves);
+  }
+
+  function handlePlay(nextSquares){
+    let nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    setHistory(nextHistory);
+
+    let nextCurrentMove = nextHistory.length - 1;
+    setCurrentMove(nextCurrentMove);
+    let nextMoves = determineMoves(nextHistory, nextCurrentMove);
+    sortMoves(false, nextMoves);
+  }
 
   return (
     <div className="game">
@@ -105,6 +121,7 @@ export default function Game(){
         < Board xIsNext={currentMove % 2 == 0} squares={currentSquares} onPlay={handlePlay}/>
       </div>
       <div className="game-info">
+        <ol><button onClick={() => sortMoves(true, moves)}>{sortOrder ? "sort desc" : "sort asc"}</button></ol>
         <ol>{moves}</ol>
       </div>
     </div>
